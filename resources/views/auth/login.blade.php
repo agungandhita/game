@@ -1,7 +1,10 @@
 <x-guest-layout>
     <div class="text-center">
+        <div class="flex justify-center mb-6">
+            <img src="/images/logo.jpeg" alt="Logo Sekolah" class="w-24 h-24 rounded-full object-cover border-4 border-primary shadow-lg" />
+        </div>
         <h2 class="text-3xl font-bold text-dark mb-2">Halo Petualang! 👋</h2>
-        <p class="mb-8 text-gray-500 text-lg">Siap untuk petualangan matematika hari ini?</p>
+        <p class="mb-8 text-gray-500 text-lg">Siap untuk petualangan hari ini?</p>
 
         <form method="POST" action="{{ route('login') }}">
             @csrf

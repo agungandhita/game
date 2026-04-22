@@ -5,26 +5,21 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Level;
 use App\Models\Question;
-use App\Models\QuestionOption;
+use App\DTOs\Question\CreateQuestionDTO;
+use App\DTOs\Question\UpdateQuestionDTO;
+use App\Services\Question\QuestionServiceInterface;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert;
 
 class QuestionController extends Controller
 {
+    public function __construct(private QuestionServiceInterface $questionService)
+    {
+    }
+
     public function index(Request $request)
     {
-        $query = Question::with('level.world');
-
-        if ($request->has('search')) {
-            $query->where('content', 'like', "%{$request->search}%");
-        }
-
-        if ($request->has('level_id') && $request->level_id != '') {
-            $query->where('level_id', $request->level_id);
-        }
-
-        $questions = $query->latest()->paginate(10);
+        $questions = $this->questionService->getPaginated($request->search, $request->level_id);
         $levels = Level::with('world')->get();
 
         return view('admin.questions.index', compact('questions', 'levels'));
@@ -40,35 +35,29 @@ class QuestionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'level_id' => 'required|exists:levels,id',
+            'grade' => 'required|in:1,2,3,4,5,6',
+            'sequence' => 'required|integer|min:1',
             'content' => 'required',
             'type' => 'required|in:multiple_choice,essay,counting,matching',
             'image' => 'nullable|image|max:2048',
-            'options.*.content' => 'required_if:type,multiple_choice',
+            'options.*.content' => 'required_if:type,multiple_choice,matching',
+            'options.*.label' => 'required_if:type,matching',
             'correct_option' => 'required_if:type,multiple_choice',
         ]);
 
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('questions', 'public');
+        $level = \App\Models\Level::where('sequence', $request->sequence)
+            ->whereHas('world', function($q) use($request){
+                $q->where('class', $request->grade);
+            })->first();
+
+        if (!$level) {
+            return back()->withErrors(['sequence' => 'Tingkat/Level tidak ditemukan untuk Kelas ini.'])->withInput();
         }
 
-        $question = Question::create([
-            'level_id' => $request->level_id,
-            'content' => $request->content,
-            'type' => $request->type,
-            'image_path' => $imagePath,
-        ]);
+        $request->merge(['level_id' => $level->id]);
 
-        if ($request->type == 'multiple_choice') {
-            foreach ($request->options as $key => $optionData) {
-                QuestionOption::create([
-                    'question_id' => $question->id,
-                    'content' => $optionData['content'],
-                    'is_correct' => $key == $request->correct_option,
-                ]);
-            }
-        }
+        $dto = CreateQuestionDTO::fromRequest($request);
+        $this->questionService->create($dto);
 
         Alert::success('Berhasil', 'Soal berhasil ditambahkan!');
 
@@ -77,48 +66,37 @@ class QuestionController extends Controller
 
     public function edit(Question $question)
     {
-        $levels = Level::with('world')->get();
-        $question->load('options');
-
-        return view('admin.questions.edit', compact('question', 'levels'));
+        $question->load('options', 'level.world');
+        
+        return view('admin.questions.edit', compact('question'));
     }
 
     public function update(Request $request, Question $question)
     {
         $request->validate([
-            'level_id' => 'required|exists:levels,id',
+            'grade' => 'required|in:1,2,3,4,5,6',
+            'sequence' => 'required|integer|min:1',
             'content' => 'required',
             'type' => 'required|in:multiple_choice,essay,counting,matching',
             'image' => 'nullable|image|max:2048',
-            'options.*.content' => 'required_if:type,multiple_choice',
+            'options.*.content' => 'required_if:type,multiple_choice,matching',
+            'options.*.label' => 'required_if:type,matching',
             'correct_option' => 'required_if:type,multiple_choice',
         ]);
 
-        if ($request->hasFile('image')) {
-            if ($question->image_path) {
-                Storage::disk('public')->delete($question->image_path);
-            }
-            $question->image_path = $request->file('image')->store('questions', 'public');
+        $level = \App\Models\Level::where('sequence', $request->sequence)
+            ->whereHas('world', function($q) use($request){
+                $q->where('class', $request->grade);
+            })->first();
+
+        if (!$level) {
+            return back()->withErrors(['sequence' => 'Tingkat/Level tidak ditemukan untuk Kelas ini.'])->withInput();
         }
 
-        $question->update([
-            'level_id' => $request->level_id,
-            'content' => $request->content,
-            'type' => $request->type,
-        ]);
+        $request->merge(['level_id' => $level->id]);
 
-        if ($request->type == 'multiple_choice' && $request->has('options')) {
-            $question->options()->delete();
-            foreach ($request->options as $key => $optionData) {
-                QuestionOption::create([
-                    'question_id' => $question->id,
-                    'content' => $optionData['content'],
-                    'is_correct' => $key == $request->correct_option,
-                ]);
-            }
-        } else {
-            $question->options()->delete();
-        }
+        $dto = UpdateQuestionDTO::fromRequest($request);
+        $this->questionService->update($question, $dto);
 
         Alert::success('Berhasil', 'Soal berhasil diperbarui!');
 
@@ -127,10 +105,7 @@ class QuestionController extends Controller
 
     public function destroy(Question $question)
     {
-        if ($question->image_path) {
-            Storage::disk('public')->delete($question->image_path);
-        }
-        $question->delete();
+        $this->questionService->delete($question);
 
         Alert::success('Berhasil', 'Soal berhasil dihapus!');
 

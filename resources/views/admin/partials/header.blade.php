@@ -2,7 +2,7 @@
     <div class='flex flex-wrap items-center justify-between gap-4 w-full relative'>
         <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 group">
             <div class="bg-blue-50 p-2 rounded-lg group-hover:bg-blue-100 transition-colors">
-                <img src="/img/lamongan.png" alt="logo" class='w-8 object-contain' />
+                <img src="/images/logo.jpeg" alt="logo" class='w-8 h-8 rounded-full object-cover' />
             </div>
             <div>
                 <h1 class="text-lg font-bold text-gray-800 leading-tight">

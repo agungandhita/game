@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Setting\SettingServiceInterface;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use RealRashid\SweetAlert\Facades\Alert;
 
 class SettingController extends Controller
 {
+    public function __construct(private SettingServiceInterface $settingService)
+    {
+    }
+
     public function index()
     {
         return view('admin.settings.index');
@@ -24,17 +28,10 @@ class SettingController extends Controller
     public function backup()
     {
         try {
-            $filename = 'backup-'.now()->format('Y-m-d-H-i-s').'.txt';
-            $payload = json_encode([
-                'created_at' => now()->toDateTimeString(),
-                'type' => 'placeholder',
-            ], JSON_THROW_ON_ERROR);
-
-            Storage::disk('local')->put('backups/'.$filename, $payload);
-
+            $this->settingService->createBackup();
             Alert::success('Berhasil', 'Backup berhasil dibuat!');
         } catch (\Exception $e) {
-            Alert::error('Gagal', 'Backup gagal: '.$e->getMessage());
+            Alert::error('Gagal', $e->getMessage());
         }
 
         return back();

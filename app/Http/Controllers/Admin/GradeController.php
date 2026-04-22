@@ -4,31 +4,18 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Level;
-use App\Models\UserProgress;
+use App\Services\Grade\GradeServiceInterface;
 use Illuminate\Http\Request;
 
 class GradeController extends Controller
 {
+    public function __construct(private GradeServiceInterface $gradeService)
+    {
+    }
+
     public function index(Request $request)
     {
-        $query = UserProgress::with(['user', 'level.world']);
-
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('user', function ($q2) use ($search) {
-                    $q2->where('nickname', 'like', "%{$search}%");
-                })->orWhereHas('level', function ($q2) use ($search) {
-                    $q2->where('title', 'like', "%{$search}%");
-                });
-            });
-        }
-
-        if ($request->has('level_id') && $request->level_id != '') {
-            $query->where('level_id', $request->level_id);
-        }
-
-        $grades = $query->latest()->paginate(10);
+        $grades = $this->gradeService->getPaginated($request->search, $request->level_id);
         $levels = Level::all();
 
         return view('admin.grades.index', compact('grades', 'levels'));
@@ -36,7 +23,7 @@ class GradeController extends Controller
 
     public function show($id)
     {
-        $grade = UserProgress::with(['user', 'level.world', 'level.questions'])->findOrFail($id);
+        $grade = $this->gradeService->getById($id);
 
         return view('admin.grades.show', compact('grade'));
     }
@@ -44,7 +31,7 @@ class GradeController extends Controller
     public function export(Request $request)
     {
         $fileName = 'grades.csv';
-        $grades = UserProgress::with(['user', 'level'])->get();
+        $grades = $this->gradeService->getAllForExport();
 
         $headers = [
             'Content-type' => 'text/csv',

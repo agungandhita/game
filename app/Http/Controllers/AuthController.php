@@ -43,7 +43,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'nickname' => 'required|string|unique:users,nickname|max:20|alpha_dash',
-            'grade' => 'required|integer|in:3,4,5',
+            'grade' => 'required|integer|in:1,2,3,4,5,6',
         ]);
 
         $user = User::create([

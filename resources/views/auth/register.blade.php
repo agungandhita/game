@@ -1,5 +1,8 @@
 <x-guest-layout>
     <div class="text-center">
+        <div class="flex justify-center mb-6">
+            <img src="/images/logo.jpeg" alt="Logo Sekolah" class="w-24 h-24 rounded-full object-cover border-4 border-secondary shadow-lg" />
+        </div>
         <h2 class="text-3xl font-bold text-dark mb-2">Buat Karakter Baru 🎨</h2>
         <p class="mb-8 text-gray-500 text-lg">Pilih identitas hebatmu di sini!</p>
 
@@ -28,9 +31,12 @@
                 <div class="relative">
                     <select id="grade" name="grade" 
                         class="block w-full text-xl p-4 border-4 border-gray-200 rounded-[2rem] focus:border-secondary focus:ring-0 transition-all duration-300 bg-gray-50/50 group-hover:bg-white appearance-none cursor-pointer">
+                        <option value="1">🏫 Kelas 1</option>
+                        <option value="2">🏫 Kelas 2</option>
                         <option value="3">🏫 Kelas 3</option>
                         <option value="4">🏫 Kelas 4</option>
                         <option value="5">🏫 Kelas 5</option>
+                        <option value="6">🏫 Kelas 6</option>
                     </select>
                     <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

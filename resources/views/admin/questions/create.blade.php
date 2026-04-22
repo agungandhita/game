@@ -18,19 +18,28 @@
         <form action="{{ route('admin.questions.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
                 <div class="space-y-2">
-                    <label for="level_id" class="block text-sm font-bold text-gray-700 ml-1">Pilih Level Game <span class="text-red-400">*</span></label>
+                    <label for="grade" class="block text-sm font-bold text-gray-700 ml-1">Pilih Kelas <span class="text-red-400">*</span></label>
                     <div class="relative group">
-                        <select name="level_id" id="level_id" class="w-full pl-4 pr-10 py-3.5 rounded-2xl bg-gray-50 border-transparent focus:border-indigo-500 focus:bg-white focus:ring-0 appearance-none transition-all text-sm font-medium" required>
-                            <option value="">-- Pilih Level --</option>
-                            @foreach($levels as $level)
-                                <option value="{{ $level->id }}" {{ old('level_id') == $level->id ? 'selected' : '' }}>{{ $level->title }} ({{ $level->world->name }})</option>
-                            @endforeach
+                        <select name="grade" id="grade" class="w-full pl-4 pr-10 py-3.5 rounded-2xl bg-gray-50 border-transparent focus:border-indigo-500 focus:bg-white focus:ring-0 appearance-none transition-all text-sm font-medium" required>
+                            <option value="">-- Pilih Kelas --</option>
+                            <option value="1" {{ old('grade') == '1' ? 'selected' : '' }}>Kelas 1</option>
+                            <option value="2" {{ old('grade') == '2' ? 'selected' : '' }}>Kelas 2</option>
+                            <option value="3" {{ old('grade') == '3' ? 'selected' : '' }}>Kelas 3</option>
+                            <option value="4" {{ old('grade') == '4' ? 'selected' : '' }}>Kelas 4</option>
+                            <option value="5" {{ old('grade') == '5' ? 'selected' : '' }}>Kelas 5</option>
+                            <option value="6" {{ old('grade') == '6' ? 'selected' : '' }}>Kelas 6</option>
                         </select>
                         <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none text-xs"></i>
                     </div>
-                    @error('level_id') <p class="text-red-500 text-[10px] font-bold mt-1 ml-1 uppercase">{{ $message }}</p> @enderror
+                    @error('grade') <p class="text-red-500 text-[10px] font-bold mt-1 ml-1 uppercase">{{ $message }}</p> @enderror
+                </div>
+                
+                <div class="space-y-2">
+                    <label for="sequence" class="block text-sm font-bold text-gray-700 ml-1">Level Game (Tulis Manual) <span class="text-red-400">*</span></label>
+                    <input type="number" name="sequence" id="sequence" class="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border-transparent focus:border-indigo-500 focus:bg-white focus:ring-0 transition-all text-sm font-medium" placeholder="Contoh: 1" value="{{ old('sequence') }}" required min="1">
+                    @error('sequence') <p class="text-red-500 text-[10px] font-bold mt-1 ml-1 uppercase">{{ $message }}</p> @enderror
                 </div>
                 
                 <div class="space-y-2">
@@ -73,20 +82,23 @@
             <div id="options-container" class="mb-10 bg-indigo-50/50 rounded-3xl p-8 border-2 border-dashed border-indigo-100">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
-                        <i class="fas fa-check-circle"></i>
+                        <i class="fas fa-list-ul"></i>
                     </div>
                     <div>
-                        <h3 class="text-lg font-bold text-indigo-900">Opsi Jawaban</h3>
-                        <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Tandai satu lingkaran untuk jawaban yang benar</p>
+                        <h3 class="text-lg font-bold text-indigo-900">Konfigurasi Jawaban</h3>
+                        <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest" id="options-hint">Isi opsi jawaban yang sesuai</p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="options-wrapper">
                     @for($i = 0; $i < 4; $i++)
                     <div class="relative group bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm transition-all focus-within:ring-2 focus-within:ring-indigo-400">
                         <div class="flex items-center gap-4">
-                            <input type="radio" name="correct_option" value="{{ $i }}" {{ old('correct_option') == $i ? 'checked' : ($i == 0 ? 'checked' : '') }} class="w-6 h-6 text-indigo-600 bg-gray-50 border-gray-200 focus:ring-indigo-500 cursor-pointer transition-transform hover:scale-110">
-                            <input type="text" name="options[{{ $i }}][content]" placeholder="Tulis jawaban ke-{{ $i + 1 }}..." value="{{ old('options.'.$i.'.content') }}" class="flex-1 bg-transparent border-none focus:ring-0 text-gray-700 font-medium placeholder-gray-300">
+                            <input type="radio" name="correct_option" value="{{ $i }}" {{ old('correct_option') == $i ? 'checked' : ($i == 0 ? 'checked' : '') }} class="mc-radio w-6 h-6 text-indigo-600 bg-gray-50 border-gray-200 focus:ring-indigo-500 cursor-pointer transition-transform hover:scale-110">
+                            <div class="flex-1 flex flex-col gap-2">
+                                <input type="text" name="options[{{ $i }}][label]" placeholder="Label (Misal: A / Pertanyaan Bagian 1)" value="{{ old('options.'.$i.'.label') }}" class="match-label hidden bg-transparent border-b border-gray-200 focus:border-indigo-500 focus:ring-0 text-gray-700 font-medium placeholder-gray-400 text-sm py-1">
+                                <input type="text" name="options[{{ $i }}][content]" placeholder="Tulis jawaban ke-{{ $i + 1 }}..." value="{{ old('options.'.$i.'.content') }}" class="mc-content w-full bg-transparent border-none focus:ring-0 text-gray-700 font-bold placeholder-gray-300">
+                            </div>
                         </div>
                     </div>
                     @endfor
@@ -107,14 +119,27 @@
     function toggleOptions() {
         const type = document.getElementById('type').value;
         const container = document.getElementById('options-container');
+        const mcRadios = document.querySelectorAll('.mc-radio');
+        const matchLabels = document.querySelectorAll('.match-label');
+        const hint = document.getElementById('options-hint');
+        const contents = document.querySelectorAll('.mc-content');
+
         if (type === 'multiple_choice') {
             container.style.display = 'block';
-            const inputs = container.querySelectorAll('input[type="text"]');
-            inputs.forEach(input => input.required = true);
+            hint.textContent = 'Tandai satu lingkaran untuk jawaban yang benar';
+            mcRadios.forEach(r => r.style.display = 'block');
+            matchLabels.forEach(l => { l.style.display = 'none'; l.required = false; });
+            contents.forEach(input => input.required = true);
+        } else if (type === 'matching') {
+            container.style.display = 'block';
+            hint.textContent = 'Isi bagian kiri (label) dan pasangannya (jawaban) di bagian kanan';
+            mcRadios.forEach(r => r.style.display = 'none');
+            matchLabels.forEach(l => { l.style.display = 'block'; l.required = true; });
+            contents.forEach(input => input.required = true);
         } else {
             container.style.display = 'none';
-            const inputs = container.querySelectorAll('input[type="text"]');
-            inputs.forEach(input => input.required = false);
+            matchLabels.forEach(l => l.required = false);
+            contents.forEach(input => input.required = false);
         }
     }
 

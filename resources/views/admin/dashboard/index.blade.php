@@ -6,7 +6,7 @@
     <div class="relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 mb-10 shadow-lg shadow-blue-100">
         <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
             <div class="text-white text-center md:text-left">
-                <h1 class="text-3xl font-bold mb-2">Selamat Datang, {{ auth()->user()->name }}! 👋</h1>
+                <h1 class="text-3xl font-bold mb-2">Halo Bapak/Ibu Guru {{ auth()->user()->name }}! 👋</h1>
                 <p class="text-blue-100 text-lg max-w-xl">Semangat mengajar hari ini! Pantau aktivitas belajar siswa Anda dengan mudah di sini.</p>
             </div>
             <div class="flex items-center gap-3 text-white bg-white/20 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/20">

@@ -4,7 +4,8 @@
         <div class="flex justify-between h-16">
             <div class="flex">
                 <!-- Logo -->
-                <div class="shrink-0 flex items-center">
+                <div class="shrink-0 flex items-center gap-2">
+                    <img src="/images/logo.jpeg" alt="Logo" class="w-10 h-10 rounded-full object-cover">
                     <a href="{{ route('dashboard') }}" class="text-2xl font-bold text-primary">
                         MathQuest
                     </a>

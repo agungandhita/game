@@ -28,7 +28,7 @@
                 </div>
 
                 <!-- Result Screen -->
-                <div x-show="showResult" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="scale-90 opacity-0" x-transition:enter-end="scale-100 opacity-100" class="absolute inset-0 bg-white z-40 flex flex-col items-center justify-center p-8 text-center" style="display: none;">
+                <div x-show="showResult" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="scale-90 opacity-0" x-transition:enter-end="scale-100 opacity-100" class="relative w-full h-full bg-white z-40 flex flex-col items-center justify-center p-8 py-16 text-center" style="display: none;">
                     <div class="text-[8rem] mb-4 animate-bounce" x-text="resultEmoji">🎉</div>
                     <h2 class="text-5xl font-black text-dark mb-4" x-text="resultTitle">Hebat!</h2>
                     <p class="text-2xl text-gray-500 mb-8 font-medium" x-text="resultMessage">Kamu berhasil menyelesaikan level ini.</p>

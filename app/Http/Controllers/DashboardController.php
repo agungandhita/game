@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\World;
+use App\Services\Dashboard\DashboardServiceInterface;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    public function __construct(private DashboardServiceInterface $dashboardService)
+    {
+    }
+
     public function index()
     {
         $user = Auth::user();
-        $worlds = World::orderBy('class')->get();
+        $worlds = $this->dashboardService->getAllWorlds($user);
 
         return view('dashboard.index', [
             'user' => $user,
@@ -21,21 +24,8 @@ class DashboardController extends Controller
 
     public function world($slug)
     {
-        $world = World::where('slug', $slug)->with('levels')->firstOrFail();
-        $user = Auth::user();
+        $data = $this->dashboardService->getWorldWithProgressBySlug($slug, Auth::id());
 
-        $progress = collect();
-        if ($user instanceof User) {
-            $progress = $user->progress()
-                ->whereIn('level_id', $world->levels->pluck('id'))
-                ->get()
-                ->keyBy('level_id');
-        }
-
-        return view('dashboard.world', [
-            'world' => $world,
-            'user' => $user,
-            'progress' => $progress,
-        ]);
+        return view('dashboard.world', $data);
     }
 }

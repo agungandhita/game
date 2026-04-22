@@ -2,23 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Services\Leaderboard\LeaderboardServiceInterface;
 use Illuminate\Http\Request;
 
 class LeaderboardController extends Controller
 {
+    public function __construct(private LeaderboardServiceInterface $leaderboardService)
+    {
+    }
+
     public function index(Request $request)
     {
         $grade = $request->query('grade');
 
-        $query = User::where('role', 'student')
-            ->orderByDesc('total_points');
-
-        if ($grade) {
-            $query->where('grade', $grade);
-        }
-
-        $users = $query->take(50)->get();
+        $users = $this->leaderboardService->getTopStudents(50, $grade);
 
         return view('leaderboard.index', [
             'users' => $users,

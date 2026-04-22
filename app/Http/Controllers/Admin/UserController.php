@@ -4,20 +4,19 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\User\UserServiceInterface;
 use Illuminate\Http\Request;
 use RealRashid\SweetAlert\Facades\Alert;
 
 class UserController extends Controller
 {
+    public function __construct(private UserServiceInterface $userService)
+    {
+    }
+
     public function index(Request $request)
     {
-        $query = User::query();
-
-        if ($request->has('search')) {
-            $query->where('nickname', 'like', "%{$request->search}%");
-        }
-
-        $users = $query->paginate(10);
+        $users = $this->userService->getPaginated($request->search);
 
         return view('admin.users.index', compact('users'));
     }
@@ -29,18 +28,13 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nickname' => 'required|unique:users',
             'grade' => 'required|integer',
             'role' => 'required|in:admin,student',
         ]);
 
-        User::create([
-            'nickname' => $request->nickname,
-            'grade' => $request->grade,
-            'role' => $request->role,
-            'total_points' => 0,
-        ]);
+        $this->userService->create($validated);
 
         Alert::success('Berhasil', 'User berhasil ditambahkan!');
 
@@ -54,17 +48,13 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        $request->validate([
+        $validated = $request->validate([
             'nickname' => 'required|unique:users,nickname,'.$user->id,
             'grade' => 'required|integer',
             'role' => 'required|in:admin,student',
         ]);
 
-        $user->update([
-            'nickname' => $request->nickname,
-            'grade' => $request->grade,
-            'role' => $request->role,
-        ]);
+        $this->userService->update($user, $validated);
 
         Alert::success('Berhasil', 'User berhasil diperbarui!');
 
@@ -73,7 +63,7 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        $user->delete();
+        $this->userService->delete($user);
         Alert::success('Berhasil', 'User berhasil dihapus!');
 
         return redirect()->route('admin.users.index');
