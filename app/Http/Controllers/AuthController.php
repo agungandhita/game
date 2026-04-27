@@ -2,91 +2,110 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserRole;
+use App\Models\Quiz\Grade;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    // ── Tampilkan form login ──────────────────────────────────────────────
     public function showLogin()
     {
+        if (Auth::check()) {
+            return $this->redirectAfterLogin();
+        }
         return view('auth.login');
     }
 
+    // ── Proses login ──────────────────────────────────────────────────────
     public function login(Request $request)
     {
         $request->validate([
-            'nickname' => 'required|string|exists:users,nickname',
+            'email'    => ['required', 'email'],
+            'password' => ['required'],
+        ], [
+            'email.required'    => 'Email wajib diisi.',
+            'email.email'       => 'Format email tidak valid.',
+            'password.required' => 'Password wajib diisi.',
         ]);
 
-        $user = User::where('nickname', $request->nickname)->first();
+        $credentials = $request->only('email', 'password');
 
-        // Update login streak
-        $this->updateLoginStreak($user);
-
-        Auth::login($user);
-
-        if ($user && $user->role === 'admin') {
-            return redirect()->route('admin.dashboard');
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
+            return $this->redirectAfterLogin();
         }
 
-        return redirect()->route('dashboard');
+        return back()
+            ->withInput($request->only('email'))
+            ->withErrors(['email' => 'Email atau password salah. Coba lagi ya!']);
     }
 
+    // ── Tampilkan form register ───────────────────────────────────────────
     public function showRegister()
     {
-        return view('auth.register');
+        if (Auth::check()) {
+            return $this->redirectAfterLogin();
+        }
+
+        $grades = Grade::orderBy('order')->get();
+        return view('auth.register', compact('grades'));
     }
 
+    // ── Proses register ───────────────────────────────────────────────────
     public function register(Request $request)
     {
         $request->validate([
-            'nickname' => 'required|string|unique:users,nickname|max:20|alpha_dash',
-            'grade' => 'required|integer|in:1,2,3,4,5,6',
+            'name'     => ['required', 'string', 'max:100'],
+            'email'    => ['required', 'email', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
+        ], [
+            'name.required'      => 'Nama wajib diisi.',
+            'email.required'     => 'Email wajib diisi.',
+            'email.email'        => 'Format email tidak valid.',
+            'email.unique'       => 'Email sudah terdaftar. Coba email lain.',
+            'password.required'  => 'Password wajib diisi.',
+            'password.min'       => 'Password minimal 6 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ]);
 
         $user = User::create([
-            'nickname' => $request->nickname,
-            'grade' => $request->grade,
-            'role' => 'student',
-            'total_points' => 0,
-            'last_login_at' => now()->toDateString(),
-            'login_streak' => 1,
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'password' => Hash::make($request->password),
+            'role'     => UserRole::Student->value,
         ]);
 
         Auth::login($user);
+        $request->session()->regenerate();
 
-        return redirect()->route('dashboard');
+        return redirect()->route('quiz.index')
+            ->with('success', 'Selamat datang, ' . $user->name . '! Yuk mulai kuis! 🎉');
     }
 
-    public function logout()
+    // ── Logout ────────────────────────────────────────────────────────────
+    public function logout(Request $request)
     {
         Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        return redirect()->route('login')
+            ->with('success', 'Berhasil keluar. Sampai jumpa! 👋');
     }
 
-    private function updateLoginStreak(User $user): void
+    // ── Helper redirect berdasarkan role ──────────────────────────────────
+    private function redirectAfterLogin()
     {
-        $today = Carbon::today();
-        $lastLogin = $user->last_login_at ? Carbon::parse($user->last_login_at) : null;
+        $user = Auth::user();
 
-        if ($lastLogin === null) {
-            // First login ever
-            $user->login_streak = 1;
-        } elseif ($lastLogin->isSameDay($today)) {
-            // Already logged in today, no change
-            return;
-        } elseif ($lastLogin->addDay()->isSameDay($today)) {
-            // Consecutive day login
-            $user->login_streak++;
-        } else {
-            // Streak broken
-            $user->login_streak = 1;
+        if ($user->role === UserRole::Admin) {
+            return redirect()->route('admin.dashboard');
         }
 
-        $user->last_login_at = $today->toDateString();
-        $user->save();
+        return redirect()->route('quiz.index');
     }
 }

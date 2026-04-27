@@ -3,20 +3,29 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreUserRequest;
+use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\User;
-use App\Services\User\UserServiceInterface;
+use App\Models\Quiz\LevelResult;
 use Illuminate\Http\Request;
-use RealRashid\SweetAlert\Facades\Alert;
+use Illuminate\Support\Facades\Hash;
+use App\Enums\UserRole;
 
 class UserController extends Controller
 {
-    public function __construct(private UserServiceInterface $userService)
-    {
-    }
-
     public function index(Request $request)
     {
-        $users = $this->userService->getPaginated($request->search);
+        $query = User::where('role', UserRole::Student);
+
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query->latest()->paginate(10);
 
         return view('admin.users.index', compact('users'));
     }
@@ -26,19 +35,21 @@ class UserController extends Controller
         return view('admin.users.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        $validated = $request->validate([
-            'nickname' => 'required|unique:users',
-            'grade' => 'required|integer',
-            'role' => 'required|in:admin,student',
+        User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,
         ]);
 
-        $this->userService->create($validated);
+        return redirect()->route('admin.users.index')->with('success', 'User berhasil ditambahkan');
+    }
 
-        Alert::success('Berhasil', 'User berhasil ditambahkan!');
-
-        return redirect()->route('admin.users.index');
+    public function show(User $user)
+    {
+        return redirect()->route('admin.users.scores', $user->id);
     }
 
     public function edit(User $user)
@@ -46,26 +57,31 @@ class UserController extends Controller
         return view('admin.users.edit', compact('user'));
     }
 
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $validated = $request->validate([
-            'nickname' => 'required|unique:users,nickname,'.$user->id,
-            'grade' => 'required|integer',
-            'role' => 'required|in:admin,student',
-        ]);
+        $data = $request->only('name', 'email', 'role');
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
 
-        $this->userService->update($user, $validated);
+        $user->update($data);
 
-        Alert::success('Berhasil', 'User berhasil diperbarui!');
-
-        return redirect()->route('admin.users.index');
+        return redirect()->route('admin.users.index')->with('success', 'User berhasil diupdate');
     }
 
     public function destroy(User $user)
     {
-        $this->userService->delete($user);
-        Alert::success('Berhasil', 'User berhasil dihapus!');
+        $user->delete();
+        return redirect()->route('admin.users.index')->with('success', 'User berhasil dihapus');
+    }
 
-        return redirect()->route('admin.users.index');
+    public function scores(User $user)
+    {
+        $scores = LevelResult::with(['level.grade'])
+            ->where('user_id', $user->id)
+            ->latest('completed_at')
+            ->paginate(15);
+            
+        return view('admin.users.scores', compact('user', 'scores'));
     }
 }

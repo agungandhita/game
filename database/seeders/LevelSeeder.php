@@ -2,25 +2,25 @@
 
 namespace Database\Seeders;
 
+use App\Models\Quiz\Grade;
+use App\Models\Quiz\Level;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class LevelSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $worlds = \App\Models\World::all();
-
-        foreach ($worlds as $world) {
+        $grades = Grade::all();
+        foreach ($grades as $grade) {
             for ($i = 1; $i <= 3; $i++) {
-                \App\Models\Level::firstOrCreate([
-                    'world_id' => $world->id,
-                    'sequence' => $i,
-                ], [
-                    'title' => 'Level ' . $i . ': Tantangan ' . $world->name,
-                    'points_reward' => 100 + ($i * 10 * $world->class),
+                Level::create([
+                    'id' => Str::uuid(),
+                    'grade_id' => $grade->id,
+                    'name' => "Level $i",
+                    'order' => $i,
+                    'is_active' => true,
+                    'time_per_question' => 30,
                 ]);
             }
         }

@@ -1,133 +1,146 @@
 @extends('admin.layouts.main')
 
+@section('title', 'Bank Soal')
+
 @section('container')
-<div class="mt-24 pb-12 px-2">
-    <!-- Header Section -->
-    <div class="relative overflow-hidden bg-white rounded-3xl p-8 mb-8 shadow-sm border border-gray-100 border-l-8 border-l-indigo-500">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-800 mb-1">Bank Soal Guru 📚</h1>
-                <p class="text-gray-500 text-sm">Kelola semua pertanyaan kuis untuk para siswa di sini.</p>
-            </div>
-            <a href="{{ route('admin.questions.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-2xl shadow-lg shadow-indigo-100 transition-all flex items-center transform hover:-translate-y-1">
-                <i class="fas fa-plus mr-2"></i> Tambah Soal Baru
-            </a>
+<div class="space-y-6">
+
+    {{-- Header --}}
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Bank Soal</h1>
+            <p class="text-sm text-gray-500 mt-0.5">Kelola semua soal kuis per level</p>
         </div>
-        <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+        <a href="{{ route('admin.questions.create') }}"
+           class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-xl shadow-sm transition-all text-sm">
+            <i class="fas fa-plus"></i> Tambah Soal
+        </a>
     </div>
 
-    <!-- Filter & Search Section -->
-    <div class="bg-white rounded-3xl shadow-sm p-6 mb-8 border border-gray-100">
-        <form action="{{ route('admin.questions.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-12 gap-4">
-            <div class="md:col-span-5 relative group">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <i class="fas fa-search text-gray-300 group-focus-within:text-indigo-500 transition-colors"></i>
-                </div>
-                <input type="text" name="search" id="search" value="{{ request('search') }}" 
-                       placeholder="Cari materi atau bahasan soal..." 
-                       class="w-full pl-11 pr-4 py-3 rounded-2xl bg-gray-50 border-transparent focus:border-indigo-500 focus:bg-white focus:ring-0 transition-all text-sm font-medium">
-            </div>
+    {{-- Filter --}}
+    <form action="{{ route('admin.questions.index') }}" method="GET"
+          class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-wrap gap-3">
+        {{-- Search --}}
+        <div class="relative flex-1 min-w-[200px]">
+            <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 text-sm"></i>
+            <input type="text" name="search" value="{{ request('search') }}"
+                   placeholder="Cari teks soal..."
+                   class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium text-gray-800 placeholder-gray-300 focus:outline-none focus:border-indigo-300 focus:bg-white transition-all">
+        </div>
 
-            <div class="md:col-span-4 relative group">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <i class="fas fa-layer-group text-gray-300 group-focus-within:text-indigo-500 transition-colors"></i>
-                </div>
-                <select name="level_id" id="level_id" 
-                        class="w-full pl-11 pr-10 py-3 rounded-2xl bg-gray-50 border-transparent focus:border-indigo-500 focus:bg-white focus:ring-0 appearance-none transition-all text-sm font-medium">
-                    <option value="">Semua Level Permainan</option>
-                    @foreach($levels as $level)
-                        <option value="{{ $level->id }}" {{ request('level_id') == $level->id ? 'selected' : '' }}>{{ $level->title }}</option>
-                    @endforeach
-                </select>
-            </div>
+        {{-- Filter Kelas --}}
+        <select name="grade_id" id="grade_id"
+                class="py-2.5 px-4 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:border-indigo-300 transition-all min-w-[140px]"
+                onchange="this.form.submit()">
+            <option value="">Semua Kelas</option>
+            @foreach($grades as $grade)
+                <option value="{{ $grade->id }}" {{ request('grade_id') == $grade->id ? 'selected' : '' }}>
+                    {{ $grade->name }}
+                </option>
+            @endforeach
+        </select>
 
-            <div class="md:col-span-3">
-                <button type="submit" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-6 rounded-2xl shadow-lg transition-all">
-                    Saring Soal
-                </button>
-            </div>
-        </form>
+        {{-- Filter Level --}}
+        @if($levels->isNotEmpty())
+        <select name="level_id"
+                class="py-2.5 px-4 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:border-indigo-300 transition-all min-w-[140px]">
+            <option value="">Semua Level</option>
+            @foreach($levels as $level)
+                <option value="{{ $level->id }}" {{ request('level_id') == $level->id ? 'selected' : '' }}>
+                    {{ $level->name }}
+                </option>
+            @endforeach
+        </select>
+        @endif
+
+        <button type="submit"
+                class="bg-gray-800 hover:bg-gray-900 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all">
+            Filter
+        </button>
+        @if(request()->hasAny(['search','grade_id','level_id']))
+            <a href="{{ route('admin.questions.index') }}"
+               class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold px-4 py-2.5 rounded-xl text-sm transition-all">
+                Reset
+            </a>
+        @endif
+    </form>
+
+    {{-- Stats --}}
+    <div class="text-sm text-gray-500 font-medium">
+        Menampilkan <strong class="text-gray-800">{{ $questions->total() }}</strong> soal
     </div>
 
-    <!-- Questions List -->
-    <div class="space-y-4">
+    {{-- Questions List --}}
+    <div class="space-y-3">
         @forelse($questions as $question)
-        <div class="bg-white rounded-3xl shadow-sm p-6 border border-gray-100 hover:shadow-xl hover:shadow-indigo-50/50 transition-all duration-300 group border-l-8 {{ $question->type == 'multiple_choice' ? 'border-l-blue-400' : 'border-l-purple-400' }}">
-            <div class="flex flex-col md:flex-row justify-between items-start gap-6">
-                <div class="flex-1">
-                    <div class="flex flex-wrap items-center gap-2 mb-4">
-                        <span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                            <i class="fas fa-tag mr-1 opacity-50"></i> {{ $question->level->title ?? 'Tanpa Level' }}
-                        </span>
-                        <span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                            <i class="fas fa-list-ul mr-1 opacity-50"></i> {{ ucfirst(str_replace('_', ' ', $question->type)) }}
-                        </span>
-                    </div>
-                    
-                    <div class="bg-gray-50/50 rounded-2xl p-6 mb-4 border border-gray-100 text-gray-700 leading-relaxed font-medium">
-                        {!! $question->content !!}
-                    </div>
-
-                    @if($question->image_path)
-                        <div class="mt-4 ring-8 ring-gray-50 rounded-2xl inline-block overflow-hidden transition-all group-hover:ring-indigo-50">
-                            <img src="{{ asset('storage/' . $question->image_path) }}" alt="Gambar Soal" class="max-h-48 rounded-xl object-cover hover:scale-105 transition-transform duration-500">
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                        {{-- Meta --}}
+                        <div class="flex flex-wrap items-center gap-2 mb-3">
+                            <span class="bg-indigo-50 text-indigo-600 text-xs font-bold px-2.5 py-1 rounded-full">
+                                {{ $question->level->grade->name ?? '-' }}
+                            </span>
+                            <span class="bg-gray-100 text-gray-600 text-xs font-semibold px-2.5 py-1 rounded-full">
+                                {{ $question->level->name ?? '-' }}
+                            </span>
+                            <span class="text-xs text-gray-400 font-medium">Soal #{{ $question->order }}</span>
                         </div>
-                    @endif
-                </div>
 
-                <div class="flex flex-row md:flex-col gap-2 w-full md:w-auto">
-                    <a href="{{ route('admin.questions.edit', $question->id) }}" class="flex-1 md:flex-none inline-flex items-center justify-center bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white font-bold py-3 px-4 rounded-xl transition-all shadow-sm border border-amber-100">
-                        <i class="fas fa-pencil-alt mr-2 md:mr-0 text-sm"></i> <span class="md:hidden">Edit</span>
-                    </a>
-                    <button type="button" onclick="confirmDelete('{{ $question->id }}')" class="flex-1 md:flex-none inline-flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-500 hover:text-white font-bold py-3 px-4 rounded-xl transition-all shadow-sm border border-red-100">
-                        <i class="fas fa-trash-alt mr-2 md:mr-0 text-sm"></i> <span class="md:hidden text-sm">Hapus</span>
-                    </button>
-                    <form id="delete-form-{{ $question->id }}" action="{{ route('admin.questions.destroy', $question->id) }}" method="POST" class="hidden">
-                        @csrf
-                        @method('DELETE')
-                    </form>
+                        {{-- Pertanyaan --}}
+                        <p class="text-gray-800 font-medium leading-relaxed mb-3 line-clamp-2">
+                            {{ $question->question_text }}
+                        </p>
+
+                        {{-- Pilihan jawaban --}}
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($question->options->sortBy('label') as $option)
+                                <span class="text-xs px-3 py-1 rounded-lg font-semibold
+                                    {{ $option->is_correct
+                                        ? 'bg-green-100 text-green-700 border border-green-200'
+                                        : 'bg-gray-50 text-gray-500 border border-gray-100' }}">
+                                    {{ $option->label->value ?? $option->label }}.
+                                    {{ Str::limit($option->option_text, 30) }}
+                                    @if($option->is_correct)
+                                        <i class="fas fa-check ml-1"></i>
+                                    @endif
+                                </span>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Actions --}}
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <a href="{{ route('admin.questions.edit', $question->id) }}"
+                           class="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-50 text-amber-500 hover:bg-amber-500 hover:text-white transition-all">
+                            <i class="fas fa-edit text-xs"></i>
+                        </a>
+                        <form action="{{ route('admin.questions.destroy', $question->id) }}" method="POST"
+                              onsubmit="return confirm('Hapus soal ini?')">
+                            @csrf @method('DELETE')
+                            <button type="submit"
+                                    class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition-all">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
         @empty
-        <div class="bg-white rounded-3xl shadow-sm p-16 text-center border border-gray-100">
-            <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-200">
-                <i class="fas fa-cloud-moon text-4xl"></i>
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center">
+                <div class="text-gray-200 text-5xl mb-4"><i class="fas fa-circle-question"></i></div>
+                <p class="font-semibold text-gray-500 mb-1">Belum ada soal</p>
+                <a href="{{ route('admin.questions.create') }}" class="text-indigo-600 text-sm font-semibold hover:underline">
+                    Tambah soal pertama →
+                </a>
             </div>
-            <h3 class="text-xl font-bold text-gray-800">Bank Soal Masih Kosong</h3>
-            <p class="text-gray-400 mt-2 mb-8 max-w-xs mx-auto text-sm">Silakan buat pertanyaan baru agar siswa bisa mulai belajar sambil bermain!</p>
-            <a href="{{ route('admin.questions.create') }}" class="inline-flex bg-indigo-600 text-white font-bold py-3 px-8 rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
-                Buat Soal Sekarang
-            </a>
-        </div>
         @endforelse
     </div>
 
-    <div class="mt-10">
-        {{ $questions->links() }}
-    </div>
+    {{-- Pagination --}}
+    @if($questions->hasPages())
+        <div>{{ $questions->links() }}</div>
+    @endif
+
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-    function confirmDelete(id) {
-        Swal.fire({
-            title: '<h3 class="font-bold text-gray-800">Hapus Soal ini?</h3>',
-            html: '<p class="text-sm text-gray-500">Data yang sudah dihapus tidak bisa dikembalikan lagi, lho.</p>',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#6b7280',
-            confirmButtonText: 'Ya, Hapus Saja',
-            cancelButtonText: 'Batal',
-            padding: '2rem',
-            borderRadius: '2rem'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('delete-form-' + id).submit();
-            }
-        })
-    }
-</script>
 @endsection
-

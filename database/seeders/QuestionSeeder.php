@@ -2,115 +2,76 @@
 
 namespace Database\Seeders;
 
+use App\Models\Quiz\Level;
+use App\Models\Quiz\Question;
+use App\Models\Quiz\Option;
+use App\Enums\OptionLabel;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class QuestionSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Get all levels
-        $levels = \App\Models\Level::all();
+        $levels = Level::with('grade')->get();
 
         foreach ($levels as $level) {
-            $worldSlug = $level->world->slug;
-
-            // Generate 5 questions per level
+            $gradeOrder = $level->grade->order;
+            
             for ($i = 1; $i <= 5; $i++) {
-                $content = '';
-                $correctAnswer = 0;
-                $options = [];
-
-                if ($worldSlug == 'dunia-angka') {
-                    // Class 3: Penjumlahan & Pengurangan
-                    $a = rand(10, 50) + ($level->sequence * 5);
-                    $b = rand(5, 20);
-                    if (rand(0, 1)) {
-                        $content = "Berapakah hasil dari $a + $b?";
-                        $correctAnswer = $a + $b;
-                    } else {
-                        $content = "Berapakah hasil dari $a - $b?";
-                        $correctAnswer = $a - $b;
-                    }
-                } elseif ($worldSlug == 'dunia-pecahan') {
-                    // Class 4: Pecahan Sederhana (Visual representation logic simplified to text for now)
-                    // e.g. 1/2 + 1/2 = 1
-                    $denom = rand(2, 4) * 2; // 2, 4, 6, 8
-                    $num1 = 1;
-                    $num2 = 1;
-                    $content = "Berapakah hasil dari $num1/$denom + $num2/$denom?";
-                    // Simplified: just asking for numerator sum if denominator is same
-                    $correctAnswer = ($num1 + $num2).'/'.$denom;
-
-                    // Override options generation for string answers
-                    $wrong1 = ($num1 + $num2 + 1).'/'.$denom;
-                    $wrong2 = ($num1 + $num2 - 1).'/'.$denom;
-                    $wrong3 = ($num1 + $num2 + 2).'/'.$denom;
-
-                    $options = [
-                        ['content' => $correctAnswer, 'is_correct' => true],
-                        ['content' => $wrong1, 'is_correct' => false],
-                        ['content' => $wrong2, 'is_correct' => false],
-                        ['content' => $wrong3, 'is_correct' => false],
-                    ];
-                } elseif ($worldSlug == 'dunia-tantangan') {
-                    // Class 5: Perkalian & Pembagian
-                    if (rand(0, 1)) {
-                        $a = rand(5, 12) + $level->sequence;
-                        $b = rand(3, 9);
-                        $content = "Berapakah hasil dari $a x $b?";
-                        $correctAnswer = $a * $b;
-                    } else {
-                        $b = rand(2, 9);
-                        $result = rand(5, 12) + $level->sequence;
-                        $a = $b * $result; // Ensure clean division
-                        $content = "Berapakah hasil dari $a : $b?";
-                        $correctAnswer = $result;
-                    }
-                }
-
-                $question = \App\Models\Question::create([
+                $questionData = $this->generateQuestionData($gradeOrder);
+                
+                $question = Question::create([
+                    'id' => Str::uuid(),
                     'level_id' => $level->id,
-                    'content' => $content,
-                    'type' => 'multiple_choice',
+                    'question_text' => $questionData['text'],
+                    'order' => $i,
                 ]);
 
-                // Generate numeric options if not set (for dunia-angka and dunia-tantangan)
-                if (empty($options)) {
-                    $wrong1 = $correctAnswer + rand(1, 5);
-                    $wrong2 = $correctAnswer - rand(1, 5);
-                    $wrong3 = $correctAnswer + rand(6, 10);
-                    // Ensure unique options
-                    while ($wrong1 == $correctAnswer) {
-                        $wrong1++;
-                    }
-                    while ($wrong2 == $correctAnswer || $wrong2 == $wrong1) {
-                        $wrong2--;
-                    }
-                    while ($wrong3 == $correctAnswer || $wrong3 == $wrong1 || $wrong3 == $wrong2) {
-                        $wrong3++;
-                    }
-
-                    $options = [
-                        ['content' => $correctAnswer, 'is_correct' => true],
-                        ['content' => $wrong1, 'is_correct' => false],
-                        ['content' => $wrong2, 'is_correct' => false],
-                        ['content' => $wrong3, 'is_correct' => false],
-                    ];
-                }
-
-                shuffle($options);
-
-                foreach ($options as $option) {
-                    \App\Models\QuestionOption::create([
+                $labels = [OptionLabel::A, OptionLabel::B, OptionLabel::C, OptionLabel::D];
+                $correctIndex = rand(0, 3);
+                
+                foreach ($labels as $index => $label) {
+                    Option::create([
+                        'id' => Str::uuid(),
                         'question_id' => $question->id,
-                        'content' => $option['content'],
-                        'is_correct' => $option['is_correct'],
+                        'option_text' => $index === $correctIndex ? $questionData['correct'] : $questionData['wrong'][$index] ?? rand(10, 100),
+                        'is_correct' => $index === $correctIndex,
+                        'label' => $label,
                     ]);
                 }
             }
         }
+    }
+
+    private function generateQuestionData(int $gradeOrder): array
+    {
+        if ($gradeOrder <= 2) {
+            $a = rand(1, 10);
+            $b = rand(1, 10);
+            return [
+                'text' => "$a + $b = ...",
+                'correct' => (string)($a + $b),
+                'wrong' => [(string)($a + $b + 1), (string)($a + $b - 1), (string)($a + $b + 2), (string)($a + $b - 2)]
+            ];
+        }
+
+        if ($gradeOrder <= 4) {
+            $a = rand(2, 10);
+            $b = rand(2, 10);
+            return [
+                'text' => "Berapa hasil perkalian $a x $b?",
+                'correct' => (string)($a * $b),
+                'wrong' => [(string)($a * $b + 10), (string)($a * $b - 10), (string)($a * ($b + 1)), (string)(($a + 1) * $b)]
+            ];
+        }
+
+        $a = rand(1, 4);
+        $b = rand(5, 10);
+        return [
+            'text' => "Pecahan $a/$b jika dijadikan desimal adalah...",
+            'correct' => (string)round($a / $b, 2),
+            'wrong' => [(string)round(($a+1)/$b, 2), (string)round($a/($b+1), 2), (string)round(($a+2)/$b, 2), "0." . rand(11, 99)]
+        ];
     }
 }

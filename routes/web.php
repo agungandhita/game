@@ -1,56 +1,55 @@
 <?php
 
-use App\Http\Controllers\Admin\AdminController;
-use App\Http\Controllers\Admin\GradeController;
-use App\Http\Controllers\Admin\QuestionController;
-use App\Http\Controllers\Admin\SettingController;
-use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\GameController;
-use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\QuizController;
 use Illuminate\Support\Facades\Route;
 
+// ─── Root redirect ─────────────────────────────────────────────────────────
 Route::get('/', function () {
-    return redirect()->route('login');
+    return auth()->check() ? redirect()->route('quiz.index') : redirect()->route('login');
 });
 
+// ─── Auth routes (guest only) ──────────────────────────────────────────────
 Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/login',    [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login',   [AuthController::class, 'login']);
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register',[AuthController::class, 'register']);
 });
 
-Route::middleware('auth')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/world/{slug}', [DashboardController::class, 'world'])->name('world.show');
-
-    Route::get('/level/{level}', [GameController::class, 'show'])->name('level.show');
-    Route::post('/level/{level}/submit', [GameController::class, 'submit'])->name('level.submit');
-
-    Route::get('/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard');
+// ─── Quiz (Siswa) ──────────────────────────────────────────────────────────
+Route::middleware('auth')->prefix('quiz')->name('quiz.')->group(function () {
+    Route::get('/',                              [QuizController::class, 'index'])->name('index');
+    Route::get('/grade/{grade}',                 [QuizController::class, 'levels'])->name('levels');
+    Route::post('/level/{level}/start',          [QuizController::class, 'start'])->name('start');
+    Route::get('/session/{session}/play',        [QuizController::class, 'play'])->name('play');
+    Route::post('/session/{session}/answer',     [QuizController::class, 'answer'])->name('answer');
+    Route::post('/session/{session}/finish',     [QuizController::class, 'finish'])->name('finish');
+    Route::get('/result/{result}',               [QuizController::class, 'result'])->name('result');
 });
 
-// Admin Routes
+// ─── Admin ─────────────────────────────────────────────────────────────────
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+    Route::get('/', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
 
-    // Manajemen Nilai
-    Route::get('/grades', [GradeController::class, 'index'])->name('grades.index');
-    Route::get('/grades/{id}', [GradeController::class, 'show'])->name('grades.show');
-    Route::get('/grades/export/csv', [GradeController::class, 'export'])->name('grades.export');
+    // User Management
+    Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
+    Route::get('users/{user}/scores', [\App\Http\Controllers\Admin\UserController::class, 'scores'])->name('users.scores');
 
-    // CRUD Soal
-    Route::resource('questions', QuestionController::class);
+    // Bank Soal
+    Route::get('grades',                     [\App\Http\Controllers\Admin\GradeController::class, 'index'])->name('grades.index');
+    Route::get('grades/{grade}',             [\App\Http\Controllers\Admin\GradeController::class, 'show'])->name('grades.show');
+    Route::resource('levels',                \App\Http\Controllers\Admin\LevelController::class)->only(['index', 'edit', 'update']);
+    Route::resource('questions',             \App\Http\Controllers\Admin\QuestionController::class);
 
-    // Manajemen User
-    Route::resource('users', UserController::class);
+    // API helper: load levels by grade (untuk Alpine.js AJAX)
+    Route::get('levels-by-grade/{grade}', function (\App\Models\Quiz\Grade $grade) {
+        return $grade->levels()->orderBy('order')->get(['id', 'name']);
+    })->name('levels.by-grade');
 
-    // Settings
-    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
-    Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
-    Route::post('/settings/backup', [SettingController::class, 'backup'])->name('settings.backup');
+    // Laporan Skor
+    Route::get('scores',         [\App\Http\Controllers\Admin\ScoreController::class, 'index'])->name('scores.index');
+    Route::get('scores/export',  [\App\Http\Controllers\Admin\ScoreController::class, 'export'])->name('scores.export');
 });

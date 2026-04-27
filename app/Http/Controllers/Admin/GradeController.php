@@ -3,65 +3,41 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Level;
-use App\Services\Grade\GradeServiceInterface;
-use Illuminate\Http\Request;
+use App\Models\Quiz\Grade;
+use App\Models\Quiz\LevelResult;
+use App\Models\User;
+use App\Enums\UserRole;
 
 class GradeController extends Controller
 {
-    public function __construct(private GradeServiceInterface $gradeService)
+    public function index()
     {
+        $grades = Grade::with(['levels.questions', 'levels.levelResults'])
+            ->orderBy('order')
+            ->get()
+            ->map(function ($grade) {
+                $grade->total_questions = $grade->levels->sum(fn($l) => $l->questions->count());
+                $grade->total_students = $grade->levels
+                    ->flatMap(fn($l) => $l->levelResults->pluck('user_id'))
+                    ->unique()
+                    ->count();
+                return $grade;
+            });
+
+        return view('admin.grades.index', compact('grades'));
     }
 
-    public function index(Request $request)
+    public function show(Grade $grade)
     {
-        $grades = $this->gradeService->getPaginated($request->search, $request->level_id);
-        $levels = Level::all();
+        $grade->load(['levels.questions', 'levels.levelResults.user']);
 
-        return view('admin.grades.index', compact('grades', 'levels'));
-    }
+        $levels = $grade->levels()->orderBy('order')->get()->map(function ($level) {
+            $level->total_questions = $level->questions()->count();
+            $level->avg_score = round($level->levelResults()->avg('score') ?? 0, 2);
+            $level->total_students = $level->levelResults()->distinct('user_id')->count('user_id');
+            return $level;
+        });
 
-    public function show($id)
-    {
-        $grade = $this->gradeService->getById($id);
-
-        return view('admin.grades.show', compact('grade'));
-    }
-
-    public function export(Request $request)
-    {
-        $fileName = 'grades.csv';
-        $grades = $this->gradeService->getAllForExport();
-
-        $headers = [
-            'Content-type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=$fileName",
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
-        ];
-
-        $columns = ['User', 'Level', 'Score', 'Stars', 'Completed', 'Attempts', 'Date'];
-
-        $callback = function () use ($grades, $columns) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, $columns);
-
-            foreach ($grades as $grade) {
-                $row['User'] = $grade->user->nickname ?? 'Unknown';
-                $row['Level'] = $grade->level->title ?? 'Unknown';
-                $row['Score'] = $grade->score;
-                $row['Stars'] = $grade->stars;
-                $row['Completed'] = $grade->is_completed ? 'Yes' : 'No';
-                $row['Attempts'] = $grade->attempts;
-                $row['Date'] = $grade->created_at;
-
-                fputcsv($file, [$row['User'], $row['Level'], $row['Score'], $row['Stars'], $row['Completed'], $row['Attempts'], $row['Date']]);
-            }
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return view('admin.grades.show', compact('grade', 'levels'));
     }
 }
