@@ -114,6 +114,34 @@
                     </div>
                 </div>
 
+                {{-- Kelas --}}
+                <div class="mb-4">
+                    <label for="grade_id" class="block text-sm font-bold text-gray-600 mb-2">
+                        Kelas <span class="text-red-400">*</span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🏫</span>
+                        <select
+                            id="grade_id"
+                            name="grade_id"
+                            required
+                            class="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 border-gray-100 rounded-2xl font-semibold text-gray-800 focus:outline-none focus:border-teal-400 focus:bg-white transition-all appearance-none @error('grade_id') border-red-300 bg-red-50 @enderror"
+                        >
+                            <option value="" disabled {{ old('grade_id') ? '' : 'selected' }}>Pilih Kelasmu</option>
+                            @foreach($grades as $grade)
+                                <option value="{{ $grade->id }}" {{ old('grade_id') == $grade->id ? 'selected' : '' }}>
+                                    {{ $grade->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Password --}}
                 <div class="mb-4" x-data="{ show: false }">
                     <label for="password" class="block text-sm font-bold text-gray-600 mb-2">

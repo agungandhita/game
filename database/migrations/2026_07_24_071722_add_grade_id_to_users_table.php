@@ -6,17 +6,24 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('nickname')->nullable()->change();
+            $table->foreignUuid('grade_id')->nullable()->constrained('grades')->nullOnDelete();
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('nickname')->nullable(false)->change();
+            $table->dropForeign(['grade_id']);
+            $table->dropColumn('grade_id');
         });
     }
 };

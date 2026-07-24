@@ -19,7 +19,15 @@ class QuizController extends Controller
     // ── Halaman pilih kelas ───────────────────────────────────────────────
     public function index()
     {
-        $grades   = Grade::with('levels')->orderBy('order')->get();
+        $user = auth()->user();
+        
+        $query = Grade::with('levels')->orderBy('order');
+        
+        if ($user->role === \App\Enums\UserRole::Student->value && $user->grade_id) {
+            $query->where('id', $user->grade_id);
+        }
+
+        $grades   = $query->get();
         $progress = collect($this->quizService->getUserProgress(auth()->id()))
             ->keyBy(fn($p) => $p->levelId);
 

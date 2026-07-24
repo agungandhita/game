@@ -96,26 +96,26 @@ class ScoreController extends Controller
                 'Nama Siswa', 'Email', 'Kelas', 'Level',
                 'Skor', 'Bintang', 'Total Benar', 'Total Soal',
                 'Timeout', 'Tanggal Selesai'
-            ]);
+            ], ';');
 
             foreach ($results as $result) {
                 fputcsv($file, [
-                    $result->user->name,
-                    $result->user->email,
+                    $result->user->name ?? 'Unknown',
+                    $result->user->email ?? 'Unknown',
                     $result->level->grade->name ?? '-',
                     $result->level->name ?? '-',
-                    number_format($result->score, 2),
+                    number_format((float) $result->score, 2),
                     $result->stars,
                     $result->total_correct,
                     $result->total_questions,
                     $result->total_timeout,
                     $result->completed_at ? $result->completed_at->format('d/m/Y H:i') : '-',
-                ]);
+                ], ';');
             }
 
             fclose($file);
         };
 
-        return response()->stream($callback, 200, $headers);
+        return response()->streamDownload($callback, $filename, $headers);
     }
 }

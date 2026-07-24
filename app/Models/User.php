@@ -21,6 +21,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'grade_id',
     ];
 
     protected $hidden = [
@@ -45,5 +46,10 @@ class User extends Authenticatable
     public function levelResults()
     {
         return $this->hasMany(LevelResult::class);
+    }
+
+    public function grade()
+    {
+        return $this->belongsTo(\App\Models\Quiz\Grade::class);
     }
 }

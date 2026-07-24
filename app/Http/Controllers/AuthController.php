@@ -62,6 +62,7 @@ class AuthController extends Controller
             'name'     => ['required', 'string', 'max:100'],
             'email'    => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
+            'grade_id' => ['required', 'exists:grades,id'],
         ], [
             'name.required'      => 'Nama wajib diisi.',
             'email.required'     => 'Email wajib diisi.',
@@ -70,6 +71,8 @@ class AuthController extends Controller
             'password.required'  => 'Password wajib diisi.',
             'password.min'       => 'Password minimal 6 karakter.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
+            'grade_id.required'  => 'Kelas wajib dipilih.',
+            'grade_id.exists'    => 'Kelas tidak valid.',
         ]);
 
         $user = User::create([
@@ -77,6 +80,7 @@ class AuthController extends Controller
             'email'    => $request->email,
             'password' => Hash::make($request->password),
             'role'     => UserRole::Student->value,
+            'grade_id' => $request->grade_id,
         ]);
 
         Auth::login($user);
