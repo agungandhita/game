@@ -23,7 +23,7 @@ class QuizController extends Controller
         
         $query = Grade::with('levels')->orderBy('order');
         
-        if ($user->role === \App\Enums\UserRole::Student->value && $user->grade_id) {
+        if ($user->role === \App\Enums\UserRole::Student && $user->grade_id) {
             $query->where('id', $user->grade_id);
         }
 
